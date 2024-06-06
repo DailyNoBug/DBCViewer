@@ -1,0 +1,41 @@
+VERSION "1.0"
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIGTYPE_VALTYPE_
+    SIGTYPE_
+    SIGTYPE_VALTYPE
+    SIG_GROUP_
+    SIG_VALTYPE_
+    VALTYPE_
+
+BS_:
+
+BU_: Vector__XXX
+
+BO_ 2000 ExampleMessage: 8 Vector__XXX
+ SG_ ExampleSignal : 0|8@1+ (1,0) [0|255] "units" Vector__XXX
+
+CM_ BO_ 2000 "Example message for testing";
+CM_ SG_ 2000 ExampleSignal "Example signal within the message";
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 65535;
+BA_DEF_DEF_ "GenMsgCycleTime" 100;
+
+BA_ "GenMsgCycleTime" BO_ 2000 100;
+
+VAL_ 2000 ExampleSignal 0 "Value0" 1 "Value1" 2 "Value2";
