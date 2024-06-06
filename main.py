@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font
 import cantools
 import pandas as pd
 
@@ -36,12 +37,25 @@ class DBCEditor:
                                         state=tk.DISABLED)
         self.delete_button.pack(side=tk.LEFT, padx=5)
 
-        self.tree = ttk.Treeview(root, columns=("Message Name", "Message ID", "Signal Name", "Start Bit", "Length",
-                                                "Byte Order", "Is Signed", "Scale", "Offset", "Minimum", "Maximum",
-                                                "Unit"), show='headings')
+        # Frame for Treeview and Scrollbars
+        tree_frame = ttk.Frame(root)
+        tree_frame.pack(fill=tk.BOTH, expand=1)
+
+        # Create Treeview with Scrollbars
+        self.tree = ttk.Treeview(tree_frame,
+                                 columns=("Message Name", "Message ID", "Signal Name", "Start Bit", "Length",
+                                          "Byte Order", "Is Signed", "Scale", "Offset", "Minimum", "Maximum", "Unit"),
+                                 show='headings')
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.tree.pack(fill=tk.BOTH, expand=1)
+
         for col in self.tree["columns"]:
-            self.tree.heading(col, text=col)
+            self.tree.heading(col, text=col, anchor=tk.W)
+            self.tree.column(col, anchor=tk.W, width=100)
 
         self.tree.bind('<Double-1>', self.on_item_double_click)
         self.tree.bind('<Button-3>', self.show_context_menu)
@@ -102,6 +116,15 @@ class DBCEditor:
         self.df["Minimum"] = self.df["Minimum"].astype(float)
         self.df["Maximum"] = self.df["Maximum"].astype(float)
 
+        # Adjust column widths
+        for col in self.tree["columns"]:
+            self.tree.column(col, width=font.Font().measure(col))
+        for item in self.tree.get_children():
+            for idx, val in enumerate(self.tree.item(item)["values"]):
+                col_w = font.Font().measure(val)
+                if self.tree.column(self.tree["columns"][idx], 'width') < col_w:
+                    self.tree.column(self.tree["columns"][idx], width=col_w)
+
     def on_item_double_click(self, event):
         item = self.tree.selection()[0]
         values = self.tree.item(item, "values")
@@ -123,17 +146,17 @@ class DBCEditor:
         def save_changes():
             new_values = [entry.get() for entry in entries]
             self.tree.item(item, values=new_values)
-            for i, col in enumerate(self.df.columns):
-                new_val = new_values[i]
-                if col in ["Message ID", "Start Bit", "Length"]:
-                    new_val = int(new_val)
-                elif col in ["Is Signed"]:
-                    new_val = new_val.lower() in ["true", "1", "yes"]
-                elif col in ["Scale", "Offset", "Minimum", "Maximum"]:
-                    new_val = float(new_val)
-                self.df.at[
-                    self.df[(self.df["Message Name"] == values[0]) & (self.df["Signal Name"] == values[2])].index[
-                        0], col] = new_val
+            matching_rows = self.df[(self.df["Message Name"] == values[0]) & (self.df["Signal Name"] == values[2])]
+            if not matching_rows.empty:
+                for i, col in enumerate(self.df.columns):
+                    new_val = new_values[i]
+                    if col in ["Message ID", "Start Bit", "Length"]:
+                        new_val = int(new_val)
+                    elif col in ["Is Signed"]:
+                        new_val = new_val.lower() in ["true", "1", "yes"]
+                    elif col in ["Scale", "Offset", "Minimum", "Maximum"]:
+                        new_val = float(new_val)
+                    self.df.at[matching_rows.index[0], col] = new_val
             edit_window.destroy()
 
         save_button = ttk.Button(edit_window, text="Save", command=save_changes)
